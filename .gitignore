@@ -8,3 +8,4 @@ credentials.json
 _pycache_
 __pycache__/
 forecast_data/
+workspace/config/
