@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import netCDF4 as nc
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
+import xarray as xr
 
 """
 Clase que usa Google Drive para la descarga de datos NRT de MSWX
@@ -111,13 +113,9 @@ class MSWXData:
         """
         Calcula la evapotranspiración (ET0) utilizando el método de Penman-Monteith para los últimos 10 días.
         """
-        date_range = [ini_date + timedelta(days=i) for i in range((fin_date - ini_date).days + 1)]
-        date_range.pop()
+        date_range = pd.date_range(start=ini_date, end=fin_date - timedelta(days=1))
         dates_list = [date.strftime('%Y%j') for date in date_range]
         doy_list = [int(date.strftime('%j')) for date in date_range]
-        print(date_range)
-        print(dates_list)
-        print(doy_list)
 
         os.makedirs(outputpath, exist_ok=True)
 
@@ -131,159 +129,121 @@ class MSWXData:
         # Inicializa una lista para almacenar los datos de ET0 con dimensión temporal
         ET0_list = []
 
-        count = -1
         print('Leyendo datos de entrada para cálculo de ET0...')
-        for t in dates_list:
+        total_iterations = len(dates_list) * len(lat)
+        bar_format = '{l_bar}{bar}| {n:.0f}/{total:.0f} [{elapsed}<{remaining}, {rate_fmt}]'
+        with tqdm(total=total_iterations, desc=f"Calculando ET0", bar_format=bar_format) as pbar:
+            for t in dates_list:
+                tmax_file = nc.Dataset(inputdatapath + "Tmax/" + str(int(t)) + ".nc")
+                tmax = tmax_file.variables["air_temperature"][:]
+                tmax = tmax[0, :, :]
 
-            # print('Archivos ' +  str(int(t)) + '.nc')
+                tmin_file = nc.Dataset(inputdatapath + "Tmin/" + str(int(t)) + ".nc")
+                tmin = tmin_file.variables["air_temperature"][:]
+                tmin = tmin[0, :, :]
 
-            # print('Leyendo datos de entrada')
-            tmax_file = nc.Dataset(
-            inputdatapath + "Tmax/" + str(int(t)) + ".nc")
-            tmax = tmax_file.variables["air_temperature"][:]
-            tmax = tmax[0, :, :]
+                temperature = (tmax + tmin) / 2
 
-            tmin_file = nc.Dataset(
-            inputdatapath + "Tmin/" + str(int(t)) + ".nc")
-            tmin = tmin_file.variables["air_temperature"][:]
-            tmin = tmin[0, :, :]
+                rh_file = nc.Dataset(inputdatapath + "RelHum/" + str(int(t)) + ".nc")
+                humidity = rh_file.variables["relative_humidity"][:]
+                humidity = humidity[0, :, :]
 
-            temperature = (tmax + tmin)/2
+                wind_file = nc.Dataset(inputdatapath + "Wind/" + str(int(t)) + ".nc")
+                wind_speed = wind_file.variables["wind_speed"][:]
+                wind_speed = wind_speed[0, :, :]
 
-            rh_file = nc.Dataset(
-            inputdatapath + "RelHum/" + str(int(t)) + ".nc")
-            humidity = rh_file.variables["relative_humidity"][:]
-            humidity = humidity[0, :, :]
+                swd_file = nc.Dataset(inputdatapath + "SWd/" + str(int(t)) + ".nc")
+                solar_radiation = swd_file.variables["downward_shortwave_radiation"][:]
+                solar_radiation = solar_radiation[0, :, :]
 
-            wind_file = nc.Dataset(
-            inputdatapath + "Wind/" + str(int(t)) + ".nc")
-            wind_speed = wind_file.variables["wind_speed"][:]
-            wind_speed = wind_speed[0, :, :]
+                rows = np.size(lat)
+                cols = np.size(lon)
+                myET0 = np.empty((rows, cols))
+                myET0[:] = np.nan
 
-            swd_file = nc.Dataset(
-            inputdatapath + "SWd/" + str(int(t)) + ".nc")
-            solar_radiation = swd_file.variables["downward_shortwave_radiation"][:]
-            solar_radiation = solar_radiation[0, :, :]
+                doy = doy_list.pop(0)
 
-            rows = np.size(lat)
-            cols = np.size(lon)
-            myET0 = np.empty((rows, cols))
-            myET0[:] = np.nan
-
-            count = count + 1
-            doy = doy_list[count]
-
-            total_iterations = len(lon)
-            bar_format = '{l_bar}{bar}| {n:.0f}/{total:.0f} [{elapsed}<{remaining}, {rate_fmt}]'
-            with tqdm(total=total_iterations, desc=f"Calculando ET0", bar_format=bar_format) as pbar:
                 for i in range(len(lat)):
-
                     for j in range(len(lon)):
-
                         if mask[i, j] == 1:
-
                             mytas = temperature[i, j]
                             myrh = humidity[i, j]
                             myws = wind_speed[i, j]
-                            # W/m2 to MJ/m2/d
-                            mysr = solar_radiation[i, j]*0.0864
+                            mysr = solar_radiation[i, j] * 0.0864
 
-                            # PRESION DE VAPOR A SATURACION Y ACTUAL
-                            es = 0.6108 * \
-                                math.exp(17.27 * mytas / (mytas + 237.3))
+                            es = 0.6108 * math.exp(17.27 * mytas / (mytas + 237.3))
                             ea = (myrh / 100) * es
 
-                            # PENDIENTE DE LA CURVA DE PRESION DE VAPOR Y CONSTANTE PSICROMETRICA
                             delta = 4098 * es / (mytas + 237.3) ** 2
                             gamma = 0.665 * 10 ** (-3) * pressure / 0.622
 
                             latitude = lat[i]
 
-                            # RADIACION SOLAR DE DIA DESPEJADO Y RADIACION EXTRATERRESTRE
-                            dr = 1 + 0.033 * \
-                                math.cos(2 * math.pi / 365 * doy)
-                            delta_s = 0.409 * \
-                                math.sin(2 * math.pi / 365 * doy - 1.39)
-                            omega_s = math.acos(-math.tan(latitude *
-                                                math.pi / 180) * math.tan(delta_s))
+                            dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * doy)
+                            delta_s = 0.409 * math.sin(2 * math.pi / 365 * doy - 1.39)
+                            omega_s = math.acos(-math.tan(latitude * math.pi / 180) * math.tan(delta_s))
                             Ra = (24 * 60 / math.pi) * 0.082 * dr * (omega_s * math.sin(latitude * math.pi / 180) * math.sin(
                                 delta_s) + math.cos(latitude * math.pi / 180) * math.cos(delta_s) * math.sin(omega_s))
 
-                            # RADIACION SOLAR NETA Y RADIACION NETA DE ONDA LARGA EMERGENTE
                             Rns = 0.77 * mysr
                             Rnl = 4.903 * 10 ** (-9) * ((mytas + 273.16) ** 4) * (
                                 0.34 - 0.14 * math.sqrt(ea)) * (1.35 * (mysr / Ra) - 0.35)
 
                             Rn = Rns - Rnl
-                            G = 0  # A ESCALA DIARIA = 0
+                            G = 0
 
-                            # ET0
                             ET0 = (0.408 * delta * (Rn - G) + gamma * (900 / (mytas + 273))
-                                   * myws * (es - ea)) / (delta + gamma * (1 + 0.34 * myws))
+                                * myws * (es - ea)) / (delta + gamma * (1 + 0.34 * myws))
 
                             myET0[i][j] = ET0
-                            pbar.update(1)
+                    pbar.update(1)
 
-        lat_min = 12.5
-        lat_max = 16.5
-        lon_min = -90
-        lon_max = -83
+                lat_min = 12.5
+                lat_max = 16.5
+                lon_min = -90
+                lon_max = -83
 
-        lon_indices = np.nonzero((lon >= lon_min) & (lon <= lon_max))[0]
-        lat_indices = np.nonzero((lat >= lat_min) & (lat <= lat_max))[0]
-        myET0 = np.array(myET0)
-        region_data = myET0[np.ix_(lat_indices, lon_indices)]
-        region_lats = lat[lat_indices]
-        region_lons = lon[lon_indices]
+                lon_indices = np.nonzero((lon >= lon_min) & (lon <= lon_max))[0]
+                lat_indices = np.nonzero((lat >= lat_min) & (lat <= lat_max))[0]
+                myET0 = np.array(myET0)
+                region_data = myET0[np.ix_(lat_indices, lon_indices)]
+                ET0_list.append(region_data)
 
-        # Añadir el ET0 de la región a la lista
-        ET0_list.append(region_data)
-
-        print('Creando archivo de salida')
         # Convertir la lista de ET0 a un array numpy con una dimensión de tiempo
         ET0_array = np.array(ET0_list)
 
+        # Crear un DataArray de xarray
+        ET0_da = xr.DataArray(
+            ET0_array,
+            dims=['time', 'lat', 'lon'],
+            coords={
+                'time': date_range,
+                'lat': lat[lat_indices],
+                'lon': lon[lon_indices]
+            },
+            name='ET0'
+        )
+
         # Sumar los valores a lo largo de la dimensión temporal
-        ET0_sum = np.sum(ET0_array, axis=0)
+        ET0_sum = ET0_da.sum(dim='time')
 
-        myfile = outputpath + f"/ET0_Honduras.nc"
-        ncfile = nc.Dataset(myfile, "w", format="NETCDF4")
-        ncfile.createDimension('lon', len(region_lons))
-        ncfile.createDimension('lat', len(region_lats))
-        ncfile.createDimension('time', len(dates_list))
+        # Crear un Dataset de xarray
+        ds = xr.Dataset({'ET0': ET0_da, 'ET0_sum': ET0_sum})
 
-        lon_var = ncfile.createVariable('lon', np.float32, ('lon',))
-        lat_var = ncfile.createVariable('lat', np.float32, ('lat',))
-        time_var = ncfile.createVariable('time', np.float32, ('time',))
-        data_var = ncfile.createVariable(
-            'ET0', np.float32, ('time', 'lat', 'lon'))
-        sum_var = ncfile.createVariable('ET0_sum', np.float32, ('lat', 'lon'))
+        # Asignar atributos
+        ds['ET0'].attrs['units'] = 'mm/day'
+        ds['ET0'].attrs['long_name'] = 'FAO-56 Penman-Monteith reference evapotranspiration'
+        ds['ET0_sum'].attrs['units'] = 'mm/day'
+        ds['ET0_sum'].attrs['long_name'] = 'Sum of FAO-56 Penman-Monteith reference evapotranspiration over time'
+        ds.attrs['author'] = 'CGIAR-AgriLAC, CENAOS-COPECO'
+        ds.attrs['originaldata'] = 'MSWX Near Real Time'
+        ds.attrs['created'] = datetime.now().strftime('%Y-%m-%d')
 
-        lon_var.units = 'degrees_east'
-        lon_var.long_name = 'Geographic longitude'
-        lat_var.units = 'degrees_north'
-        lat_var.long_name = 'Geographic latitude'
-        time_var.units = 'days since 1900-01-01 00:00:00'
-        time_var.long_name = 'Time'
-        data_var.units = 'mm/day'
-        data_var.long_name = 'FAO-56 Penman-Monteith reference evapotranspiration'
-        sum_var.units = 'mm/day'
-        sum_var.long_name = 'Sum of FAO-56 Penman-Monteith reference evapotranspiration over time'
-
-        ncfile.author = 'CGIAR-AgriLAC, CENAOS-COPECO'
-        ncfile.originaldata = 'MSWX Near Real Time'
-        ncfile.created = datetime.now().strftime('%Y-%m-%d')
-
-        lon_var[:] = region_lons
-        lat_var[:] = region_lats
-        time_var[:] = [int(t) for t in dates_list]
-        data_var[:] = ET0_array
-        sum_var[:] = ET0_sum
-
-        ncfile.close()
-
-        print('Listo')
-
+        # Guardar el Dataset a un archivo .nc
+        output_file = os.path.join(outputpath, "ET0_Honduras.nc")
+        ds.to_netcdf(output_file, mode='w', format='NETCDF4')
+        print(ds)
+        
 # Ejemplo de uso:
 # if __name__ == "__main__":
 #     credentials_file = "./credentials.json"
