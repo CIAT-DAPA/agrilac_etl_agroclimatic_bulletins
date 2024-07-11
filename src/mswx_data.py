@@ -115,10 +115,10 @@ class MSWXData:
         date_range.pop()
         dates_list = [date.strftime('%Y%j') for date in date_range]
         doy_list = [int(date.strftime('%j')) for date in date_range]
+        print(date_range)
+        print(dates_list)
+        print(doy_list)
 
-        dt = datetime.now()
-        date_str = dt.strftime('%Y%b%d').capitalize()
-        outputpath = os.path.join(outputpath, date_str)
         os.makedirs(outputpath, exist_ok=True)
 
         # Archivo de máscara de Honduras

@@ -80,13 +80,19 @@ class Tools():
     def regions_crop(self, file_to_be_cropped, shapefile, output_file, name_column):
         # Abre el archivo netCDF
         ds = xr.open_dataset(file_to_be_cropped, decode_times=False)
+        print(ds)
 
         # Asegúrate de que el dataset tenga las coordenadas necesarias para rioxarray
         if 'crs' not in ds.attrs:
             ds.rio.write_crs("EPSG:4326", inplace=True)  # Ajusta el EPSG según sea necesario
 
+         # Obtener las dimensiones del archivo NetCDF
+        lon_dim = 'lon' if 'lon' in ds.dims else 'x'
+        lat_dim = 'lat' if 'lat' in ds.dims else 'y'
+
+
         # Configura las dimensiones espaciales
-        ds = ds.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+        ds = ds.rio.set_spatial_dims(x_dim=lon_dim, y_dim=lat_dim, inplace=True)
 
         # Abre el shapefile usando geopandas
         regions = gpd.read_file(shapefile)
@@ -157,12 +163,14 @@ class Tools():
                     # Abrir el archivo .tif y agregarlo a la lista de datasets
                     with rasterio.open(filename) as src:
                         data = src.read(1)  # Leer la primera banda
+                        latitudes = src.transform[5] + src.transform[4] * np.arange(src.height)
+                        longitudes = src.transform[2] + src.transform[0] * np.arange(src.width)
                         ds = xr.DataArray(
                             data,
-                            dims=('y', 'x'),
+                            dims=('lat', 'lon'),
                             coords={
-                                'y': src.transform[5] + src.transform[4] * np.arange(src.height),
-                                'x': src.transform[2] + src.transform[0] * np.arange(src.width)
+                                'lat': latitudes,
+                                'lon': longitudes
                             },
                             name=variable_name
                         ).to_dataset(name=variable_name)  # Convertir DataArray a Dataset
@@ -180,13 +188,15 @@ class Tools():
 
         # Asignar las unidades a la variable
         combined_ds[variable_name].attrs['units'] = units
-        combined_ds.attrs['units'] = units     
+        
         # Guardar el dataset combinado a un archivo .nc
         combined_ds.to_netcdf(output_folder, mode='w', format='NETCDF4')
+        print(combined_ds)
 
         # Cerrar los datasets
         for ds in datasets:
             ds.close()
+
 
         
     def translate_julian_dates(self, directorio):
@@ -221,7 +231,7 @@ class Tools():
         
         return nuevos_nombres
 
-    def calculate_daily_mean_per_municipality(self, shapefile_path, netcdf_file, variable_name, output_csv, region_column, municipality_column, units):
+    def calculate_daily_mean_per_municipality(self, shapefile_path, netcdf_file, variable_name, region_column, municipality_column, units):
         """
         Función para calcular el promedio diario de una variable por municipio y escribir los resultados en un archivo CSV.
 
@@ -264,15 +274,16 @@ class Tools():
 
             # Agregar los resultados a la lista
             results.append({
-                'Region': municipality[region_column],
-                'Municipio': municipality[municipality_column],
-                f'{variable_name}_promedio': daily_mean,
-                'units': units
+                'region': municipality[region_column],
+                'municipio': municipality[municipality_column],
+                f'{variable_name}_promedio ({units})': daily_mean
             })
 
         # Crear un DataFrame con los resultados y escribirlo en un archivo CSV
         df = pd.DataFrame(results)
-        df.to_csv(output_csv, index=False)
+        #df.to_csv(output_csv, index=False)
+        return df
+
 
 #regions_crop("./outputs/MSWX/2024jun28/ET0.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/MSWX/ET0_Honduras_regions.nc")
 # ini_date = datetime(2017, 8, 15).date()
@@ -298,13 +309,17 @@ if __name__ == "__main__":
 
     #main.merge_files(ini_date, fin_date, "./workspace/inputs/downloaded_data/20240705/MSWX/Temp/", "./workspace/outputs/20240705/MSWX/Temp.nc", "nc", "degree_Celsius", variable_name='air_temperature')
     #main.country_crop("./workspace/outputs/20240705/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", "./workspace/outputs/20240705/MSWX/Temp_Honduras.nc")
-    #main.regions_crop("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240705/MSWX/Temp_Honduras_regions.nc", "Nombre")
-    #main.regions_crop("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240705/MSWX/Temp_Honduras_municipios.nc", "NAME_2")
-    #main.regions_crop("./workspace/outputs/20240705/MSWX/ET0_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240705/MSWX/ET0_Honduras_regions.nc", "Nombre")
+    #main.regions_crop("./workspace/outputs/20240710/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240705/MSWX/Temp_Honduras_municipios.nc", "NAME_2")
+    
+    #main.regions_crop("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240710/MSWX/Temp_Honduras_regions.nc", "Nombre")
+    main.regions_crop("./workspace/outputs/20240710/MSWX/ET0_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240710/MSWX/ET0_Honduras_regions.nc", "Nombre")
+    #main.regions_crop("./workspace/outputs/20240710/IMERG/IMERG_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240710/IMERG/IMERG_Honduras_regions.nc", "Nombre")
+    #main.regions_crop("./workspace/outputs/20240710/forecast/ET0_forecast_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240710/forecast/ET0_forecast_Honduras_regions.nc", "Nombre")
+    #main.regions_crop("./workspace/outputs/20240710/forecast/RAINNC_forecast_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", "./workspace/outputs/20240710/forecast/RAINNC_forecast_Honduras_regions.nc", "Nombre")
 
     #main.plot_nc_file("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "air_temperature", save_path="./workspace/outputs/figures/",lon_dim='lon', lat_dim='lat', time_dim='time')
     #main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "air_temperature", "./workspace/outputs/20240705/MSWX/Temp_Honduras_municipios.csv", "NAME_1", "NAME_2", "grados celcius")
     #main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240705/MSWX/ET0_Honduras.nc", "ET0", "./workspace/outputs/20240705/MSWX/ET0_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
-    main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240704/IMERG/IMERG_Honduras.nc", "precipitationCal", "./workspace/outputs/20240704/IMERG/IMERG_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
+    #main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/20240704/IMERG/IMERG_Honduras.nc", "precipitationCal", "./workspace/outputs/20240704/IMERG/IMERG_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
     #main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/forecast/ET0_forecast_Honduras.nc", "ET0", "./workspace/outputs/forecast/ET0_forecast_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
     #main.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/forecast/RAINNC_forecast_Honduras.nc", "precipitation", "./workspace/outputs/forecast/RAINNC_forecast_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")

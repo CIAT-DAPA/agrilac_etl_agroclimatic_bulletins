@@ -50,42 +50,52 @@ class Master:
     def post_data_process(self, ini_date, fin_date):
         tools = Tools()
 
-        print("Merging forecast files...")
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/RAINNC/RAINNC_", "./workspace/outputs/forecast/RAINNC_forecast_Honduras.nc", "tif", variable_name='precipitation')
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/ET0/ET0_", "./workspace/outputs/forecast/ET0_forecast_Honduras.nc", "tif", variable_name='ET0')
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/downloaded_data/20240705/MSWX/Temp/", "./workspace/outputs/20240705/MSWX/Temp.nc", "nc", variable_name='air_temperature')
-        print("Merging forecast files end.")
+        # print("Merging forecast files...")
+        # tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/RAIN/RAIN_", f"./workspace/outputs/{self.TODAY}/forecast/RAINNC_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
+        # tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/ET0/ET0_", f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
+        # tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/T2/T2_", f"./workspace/outputs/{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "mm/day", "grados celcius", variable_name='ET0')
+        # tools.merge_files(ini_date, fin_date, "./workspace/inputs/downloaded_data/20240705/MSWX/Temp/", "./workspace/outputs/20240705/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
+        # print("Merging forecast files end.")
 
-        print("Cropping Temp for Honduras...")
-        tools.country_crop("./workspace/outputs/20240705/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", "./workspace/outputs/20240705/MSWX/Temp_Honduras.nc")
-        print("Cropping Temp for Honduras end.")
-
-
-        print("Cropping regions...")
-        #tools.regions_crop("./outputs/MSWX/2024jun28/ET0_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/MSWX/ET0_Honduras_regions.nc")
-        #tools.regions_crop("./outputs/IMERG/IMERG_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/IMERG/IMERG_Honduras_regions.nc")
-        #tools.regions_crop("./outputs/forecast/ET0_forecast_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/forecast/ET0_forecast_Honduras_regions.nc")
-        #tools.regions_crop("./outputs/forecast/RAINNC_forecast_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/forecast/RAINNC_forecast_Honduras_regions.nc")
-
-        tools.regions_crop("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", "./workspace/outputs/20240705/MSWX/Temp_Honduras_regions.nc")
+        # print("Cropping Temp for Honduras...")
+        # tools.country_crop("./workspace/outputs/20240705/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", "./workspace/outputs/20240705/MSWX/Temp_Honduras.nc")
+        # print("Cropping Temp for Honduras end.")
 
 
-        print("Cropping regions end.")
+        # print("Cropping regions...")
+        # #tools.regions_crop("./outputs/MSWX/2024jun28/ET0_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/MSWX/ET0_Honduras_regions.nc")
+        # #tools.regions_crop("./outputs/IMERG/IMERG_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/IMERG/IMERG_Honduras_regions.nc")
+        # #tools.regions_crop("./outputs/forecast/ET0_forecast_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/forecast/ET0_forecast_Honduras_regions.nc")
+        # #tools.regions_crop("./outputs/forecast/RAINNC_forecast_Honduras.nc", "./mask_honduras/regions_shapefile/hnd_admbnda_adm1_sinit_20161005.shp", "./outputs/forecast/RAINNC_forecast_Honduras_regions.nc")
 
-        print("Plotting files...")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/MSWX/2024jul04/ET0_Honduras.nc", "ET0")
-        tools.plot_nc_file("./workspace/outputs/forecast/ET0_forecast_Honduras.nc", "ET0", lon_dim='x', lat_dim='y', time_dim='time')
-        tools.plot_nc_file("./workspace/outputs/forecast/RAINNC_forecast_Honduras.nc", "precipitation", lon_dim='x', lat_dim='y', time_dim='time')
-        print("Plotting files end.")
+        # tools.regions_crop("./workspace/outputs/20240705/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", "./workspace/outputs/20240705/MSWX/Temp_Honduras_regions.nc")
 
-        print("Writting CSV file for daily mean for municipalities...")
-        tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras_municipios.csv", "NAME_1", "NAME_2", "grados celcius")
-        tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
-        tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
-        tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/forecast/ET0_forecast_Honduras.nc", "ET0", "./workspace/outputs/forecast/ET0_forecast_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
-        tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", "./workspace/outputs/forecast/RAINNC_forecast_Honduras.nc", "precipitation", "./workspace/outputs/forecast/RAINNC_forecast_Honduras_municipios.csv", "NAME_1", "NAME_2", "mm/day")
-        print("Writting CSV file for daily mean for municipalities end.")
+
+        # print("Cropping regions end.")
+
+        # print("Plotting files...")
+        # tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal")
+        # tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/MSWX/2024jul04/ET0_Honduras.nc", "ET0")
+        # tools.plot_nc_file("./workspace/outputs/forecast/ET0_forecast_Honduras.nc", "ET0", lon_dim='x', lat_dim='y', time_dim='time')
+        # tools.plot_nc_file("./workspace/outputs/forecast/RAINNC_forecast_Honduras.nc", "precipitation", lon_dim='x', lat_dim='y', time_dim='time')
+        # print("Plotting files end.")
+
+        # print("Writting CSV file for daily mean for municipalities...")
+        # temp = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "°C")
+        # et0_mswx = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm/day")
+        # prep_imerg = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm/day")
+        # et0_forecast = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm/day")
+        # prep_forecast = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/RAINNC_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm/day")
+
+        # merged_df = temp.merge(et0_mswx, on=["region", "municipio"], suffixes=('_temp', '_et0_mswx'))
+        # merged_df = merged_df.merge(prep_imerg, on=["region", "municipio"], suffixes=('', '_prep_imerg'))
+        # merged_df = merged_df.merge(et0_forecast, on=["region", "municipio"], suffixes=('', ' forecast'))
+        # merged_df = merged_df.merge(prep_forecast, on=["region", "municipio"], suffixes=('', '_prep_forecast'))
+        # # Verificamos los datos después del merge
+        # print(merged_df.head())
+        # merged_df.to_csv(f"./workspace/outputs/{self.TODAY}/daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
+
+        # print("Writting CSV file for daily mean for municipalities end.")
 
 
 if __name__ == "__main__":
