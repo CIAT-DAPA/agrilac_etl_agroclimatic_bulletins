@@ -7,17 +7,49 @@ import os, sys
 class Master:
     #Today date for use in folders
     TODAY = datetime.now().date().strftime('%Y%m%d')
-    # WORSKPACE = sys.argv[4]
-    # CONFIG_FOLDER = os.path.join(WORSKPACE, "/config/")
-    # INPUTS_FOLDER = os.path.join(WORSKPACE, "/inputs/")
-    # OUTPUTS_FOLDER = os.path.join(WORSKPACE, "/outputs/")
+    INI_DATE = ""
+    FIN_DATE = ""
+    WORSKPACE = ""
+    CONFIG_FOLDER = ""
+    INPUTS_FOLDER = ""
+    OUTPUTS_FOLDER = ""
+    INPUTS_DOWNLOADED_DATA=""
+    INPUTS_FORECAST_DATA=""
+    HONDURAS_SHP_PATH=""
+    HONDURAS_REGIONS_PATH=""
+    HONDURAS_MUNICIPALITIES_PATH=""
+
+
+    def __init__(self, central_date, workspace_path=None, path_shp_crop_honduras=None, 
+                 path_shp_crop_honduras_regions=None, path_shp_crop_honduras_municipalities=None, path_forecast_files=None):
+        """
+        Inicializa la clase con los parametros del usuario, así como también la construcción de los diferentes directorios.
+        """
+        self.WORKSPACE = workspace_path if workspace_path is not None else "./workspace/"
+        self.CONFIG_FOLDER = os.path.join(self.WORKSPACE, "config/")
+        self.INPUTS_FOLDER = os.path.join(self.WORKSPACE, "inputs/")
+        self.OUTPUTS_FOLDER = os.path.join(self.WORKSPACE, "outputs/")
+        self.INPUTS_DOWNLOADED_DATA = os.path.join(self.INPUTS_FOLDER, "downloaded_data/")
+        self.INPUTS_FORECAST_DATA = path_forecast_files if path_forecast_files is not None else os.path.join(self.INPUTS_FOLDER, "forecast_data/")
+        self.HONDURAS_SHP_PATH = path_shp_crop_honduras if path_shp_crop_honduras is not None else os.path.join(self.CONFIG_FOLDER, "mask_honduras/")
+        self.HONDURAS_REGIONS_PATH = path_shp_crop_honduras_regions if path_shp_crop_honduras_regions is not None else os.path.join(self.HONDURAS_SHP_PATH, "regions_shapefile/")
+        self.HONDURAS_MUNICIPALITIES_PATH = path_shp_crop_honduras_municipalities if path_shp_crop_honduras_municipalities is not None else os.path.join(self.HONDURAS_SHP_PATH, "municipalities_shapefile/")
+
+        self.FIN_DATE = datetime.strptime(central_date, "%Y-%m-%d").date()
+        self.INI_DATE = self.FIN_DATE - timedelta(days=9)
+
+        print(self.INI_DATE)
+        print(self.FIN_DATE)
+        #Dates for last ten days, taking yesterday as last day
+        #fin_date = datetime.now().date() - timedelta(days=1)
+        #ini_date = fin_date - timedelta(days=9)
 
 
     """
     MSXW data process
     """
     def run_mswx_data_proccess(self, ini_date, fin_date):
-        credentials_file = os.path.join("./workspace/config/credentials.json")
+        credentials_file = os.path.join(f"{self.CONFIG_FOLDER}credentials.json")
         folder_id = "14no0Wkoat3guyvVnv-LccXOEoxQqDRy7"  
         
         var_mswx = {
@@ -32,16 +64,16 @@ class Master:
         google_drive_mswx = MSWXData(credentials_file)
         # folders = google_drive_mswx.list_folders_in_folder(folder_id, var_mswx)
         # for folder in folders:
-        #     google_drive_mswx.list_files_in_daily_folder(folder['id'], ini_date, fin_date, os.path.join(f"./workspace/inputs/downloaded_data/{self.TODAY}"), folder['title'])
+        #     google_drive_mswx.list_files_in_daily_folder(folder['id'], ini_date, fin_date, os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}"), folder['title'])
 
-        google_drive_mswx.calculate_et0(ini_date, fin_date, inputdatapath=os.path.join(f"./workspace/inputs/downloaded_data/{self.TODAY}/MSWX/"), outputpath=os.path.join(f"./workspace/outputs/{self.TODAY}/MSWX/"), mask_file_path='./workspace/config/mask_honduras/mask_mswx_hnd.nc4')
+        google_drive_mswx.calculate_et0(ini_date, fin_date, inputdatapath=os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/"), outputpath=os.path.join(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/"), mask_file_path=f'{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4')
 
     """
     IMERG data process
     """  
     def run_imerg_data_process(self, ini_date, fin_date):
         imerg_process = IMERGData()
-        imerg_process.imerg(ini_date, fin_date, os.path.join(f"./workspace/inputs/downloaded_data/{self.TODAY}/IMERG/"), os.path.join(f"./workspace/outputs/{self.TODAY}/IMERG/"), mask_file_path='./workspace/config/mask_honduras/mask_mswx_hnd.nc4')
+        imerg_process.imerg(ini_date, fin_date, os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/IMERG/"), os.path.join(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/"), mask_file_path=f'{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4')
         
 
     """
@@ -53,59 +85,61 @@ class Master:
         #tools.translate_julian_dates()
 
         print("Merging forecast files...")
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/RAIN/RAIN_", f"./workspace/outputs/{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/ET0/ET0_", f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
-        tools.merge_files(ini_date, fin_date, "./workspace/inputs/forecast_data/T2/T2_", f"./workspace/outputs/{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
-        tools.merge_files(datetime(2024, 4, 8).date(), datetime(2024, 4, 18).date(), f"./workspace/inputs/downloaded_data/{self.TODAY}/MSWX/Temp/", f"./workspace/outputs/{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
+        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
+        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
+        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
+        tools.merge_files(datetime(2024, 4, 8).date(), datetime(2024, 4, 18).date(), f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
         print("Merging forecast files end.")
 
         print("Cropping observed Temp for Honduras...")
-        tools.country_crop(f"./workspace/outputs/{self.TODAY}/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc")
+        tools.country_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc")
         print("Cropping observed Temp for Honduras end.")
 
-
         print("Cropping regions...")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/RAIN_forecast_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"./workspace/outputs/{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "./workspace/config/mask_honduras/regions_shapefile/Regiones_productoras_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/Temperature_forecast_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras_regions.nc", "Nombre")
+        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras_regions.nc", "Nombre")
         print("Cropping regions end.")
 
         print("Plotting files...")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", save_path=f"./workspace/outputs/{self.TODAY}/figures/temperature_honduras_observado_")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", save_path=f"./workspace/outputs/{self.TODAY}/figures/precipitation_honduras_observado_")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", save_path=f"./workspace/outputs/{self.TODAY}/figures/et0_honduras_observado_")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "air_temperature", save_path=f"./workspace/outputs/{self.TODAY}/figures/temperature_honduras_forecast_")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", save_path=f"./workspace/outputs/{self.TODAY}/figures/et0_honduras_forecast_")
-        tools.plot_nc_file(f"./workspace/outputs/{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", save_path=f"./workspace/outputs/{self.TODAY}/figures/precipitation_honduras_forecast_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_observado_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_observado_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_observado_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_forecast_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_forecast_")
+        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_forecast_")
         print("Plotting files end.")
 
         print("Writting CSV file for daily mean for municipalities...")
-        temp = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
-        temp_forecast = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
-        et0_mswx = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
-        et0_forecast = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
-        prep_imerg = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
-        prep_forecast = tools.calculate_daily_mean_per_municipality("./workspace/config/mask_honduras/municipalities_shapefile/Municipios_reg_prod_HN.shp", f"./workspace/outputs/{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
+        temp = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
+        temp_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
+        et0_mswx = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
+        et0_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
+        prep_imerg = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
+        prep_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
 
         merged_df = temp.merge(temp_forecast, on=["region", "municipio"])
         merged_df = merged_df.merge(et0_mswx, on=["region", "municipio"])
         merged_df = merged_df.merge(et0_forecast, on=["region", "municipio"])
         merged_df = merged_df.merge(prep_imerg, on=["region", "municipio"])
         merged_df = merged_df.merge(prep_forecast, on=["region", "municipio"])
-        merged_df.to_csv(f"./workspace/outputs/{self.TODAY}/daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
+        merged_df.to_csv(f"{self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
         print("Writting CSV file for daily mean for municipalities end.")
 
 
 if __name__ == "__main__":
-    #YYYYMMDD
-    # central_date = sys.argv[1]
-    # path_shp_crop_honduras = sys.argv[2]
-    # path_shp_crop_honduras_regions = sys.argv[3]
-    # path_forecast_files = sys.argv[3]
-    # workspace_path = sys.argv[4]
+    #YYYY-MM-DD
+    central_date = sys.argv[1]
+    print(central_date)
+    print(sys.argv)
+    workspace_path =  sys.argv[2] if len(sys.argv) > 2 else None
+    path_shp_crop_honduras = sys.argv[3] if len(sys.argv) > 3 else None
+    path_shp_crop_honduras_regions = sys.argv[4] if len(sys.argv) > 4 else None
+    path_shp_crop_honduras_municipalities = sys.argv[5] if len(sys.argv) > 5 else None
+    path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
 
 
     #Dates for last ten days, taking yesterday as last day
@@ -113,9 +147,9 @@ if __name__ == "__main__":
     #ini_date = fin_date - timedelta(days=9)
     #ini_date = datetime(2024, 4, 8).date()
     #fin_date = datetime(2024, 4, 18).date() 
-    ini_date = datetime(2024, 7, 5).date()
-    fin_date = datetime(2024, 7, 14).date() 
-    main = Master()
+    #ini_date = datetime(2024, 7, 5).date()
+    #fin_date = datetime(2024, 7, 14).date() 
+    main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
 
     print("MSWX data process begin...")
     #main.run_mswx_data_proccess(ini_date, fin_date)
@@ -125,4 +159,4 @@ if __name__ == "__main__":
     #main.run_imerg_data_process(ini_date, fin_date)
     print("IMERG data process end.")
 
-    main.post_data_process(ini_date, fin_date)
+    #main.post_data_process(ini_date, fin_date)
