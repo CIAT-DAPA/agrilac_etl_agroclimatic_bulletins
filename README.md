@@ -38,9 +38,9 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
 ````
 
 ### Params
-end_date: date in YYYY-MM-DD format. This will be the last day of a 10-day range. This is the only **mandatory** parameter.
-workspace_path: the path set as workspace 
-path_shp_crop_honduras: path where is the mask for Honduras
-path_shp_crop_honduras_regions: path where is the shapefile for Honduras regions
-path_shp_crop_honduras_municipalities: path where is the shapefile for Honduras municipalities
-path_forecast_files: path where the WRF .nc files (Temperature, Rain and ET0)
+- end_date: date in YYYY-MM-DD format. This will be the last day of a 10-day range. This is the only **mandatory** parameter.
+- workspace_path: the path set as workspace 
+- path_shp_crop_honduras: path where is the mask for Honduras
+- path_shp_crop_honduras_regions: path where is the shapefile for Honduras regions
+- path_shp_crop_honduras_municipalities: path where is the shapefile for Honduras municipalities
+- path_forecast_files: path where the WRF .nc files (Temperature, Rain and ET0)
