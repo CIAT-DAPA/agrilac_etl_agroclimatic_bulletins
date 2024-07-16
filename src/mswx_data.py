@@ -242,7 +242,6 @@ class MSWXData:
         # Guardar el Dataset a un archivo .nc
         output_file = os.path.join(outputpath, "ET0_Honduras.nc")
         ds.to_netcdf(output_file, mode='w', format='NETCDF4')
-        print(ds)
         
 # Ejemplo de uso:
 # if __name__ == "__main__":

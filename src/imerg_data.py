@@ -1,8 +1,8 @@
-from urllib import request
+from urllib import request, error
 from netCDF4 import Dataset
 import pandas as pd
-from datetime import datetime, timedelta
-import os
+from datetime import timedelta
+import os, json
 import xarray as xr
 from tqdm import tqdm
 
@@ -17,10 +17,17 @@ class IMERGData:
             current_date = current_date.replace(day=1)
         return result
 
+    def load_config(self, config_path):
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
+        return config
 
     def imerg(self, ini_date, fin_date, download_folder, output_folder, mask_file_path):
-        username = "deguzman"
-        password = "Daniqwert54321."
+        #Archivo de configuración con las credenciales de la cuenta de IMERG
+        config_path = '../workspace/config/conf.json'
+        config = self.load_config(config_path)
+        username = config.get("username")
+        password = config.get("password")
         redirectHandler = request.HTTPRedirectHandler()
         cookieProcessor = request.HTTPCookieProcessor()
         passwordManager = request.HTTPPasswordMgrWithDefaultRealm()
@@ -30,23 +37,21 @@ class IMERGData:
         opener = request.build_opener(
             redirectHandler, cookieProcessor, authHandler)
         request.install_opener(opener)
-        #Checking if folders exists
+        
+        # Checking if folders exist
         if not os.path.exists(download_folder):
             os.makedirs(download_folder)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
         month_year_range = self.generate_month_year_range(ini_date, fin_date)
-    
         days_array = [str(day).zfill(2) for day in range(1, 32)]
 
         for i, month_year in enumerate(month_year_range):
-
             [month, year] = month_year.split('-')
 
             if i == 0:
-                days = [str(day).zfill(2)
-                        for day in range(ini_date.day, fin_date.day)]
+                days = [str(day).zfill(2) for day in range(ini_date.day, fin_date.day)]
             elif i == len(month_year_range) - 1:
                 days = [str(day).zfill(2) for day in range(1, fin_date.day + 1)]
             else:
@@ -60,10 +65,6 @@ class IMERGData:
                     try:
                         url = f'https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGDL.06/{year}/{month}/3B-DAY-L.MS.MRG.3IMERG.{year}{month}{day}-S000000-E235959.V06.nc4.nc4?precipitationCal[0:1:0][0:1:3599][0:1:1799]'            
                         filename = f'{download_folder}IMERG_LATE{year}{month}{day}.nc'
-                        #filename = f'IMERG_LATE_{year}_{month}_{day}.nc'
-                        #request.urlretrieve(url, filename)
-                        
-                        
                         request.urlretrieve(url, filename)
                         pbar.update(1)
 
@@ -81,10 +82,15 @@ class IMERGData:
                             os.remove(filename)
                             continue
 
+                    except error.HTTPError as e:
+                        if e.code == 404:
+                            print(f'Fechas no disponibles en IMERG para {year}-{month}-{day}. Pruebe con otro rango de fechas')
+                        else:
+                            print(e)
                     except Exception as e:
                         print(e)
-        
-        #Merging, cropping and writting file
+
+        # Merging, cropping, and writing file
         self.merge_nc_files(ini_date, fin_date, download_folder, output_folder, mask_file_path)
 
     def merge_nc_files(self, start_date, end_date, download_folder, output_folder, mask_file_path):

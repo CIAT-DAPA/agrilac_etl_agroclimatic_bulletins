@@ -25,7 +25,7 @@ class Master:
         """
         Inicializa la clase con los parametros del usuario, así como también la construcción de los diferentes directorios.
         """
-        self.WORKSPACE = workspace_path if workspace_path is not None else "./workspace/"
+        self.WORKSPACE = workspace_path if workspace_path is not None else "../workspace/"
         self.CONFIG_FOLDER = os.path.join(self.WORKSPACE, "config/")
         self.INPUTS_FOLDER = os.path.join(self.WORKSPACE, "inputs/")
         self.OUTPUTS_FOLDER = os.path.join(self.WORKSPACE, "outputs/")
@@ -36,14 +36,11 @@ class Master:
         self.HONDURAS_MUNICIPALITIES_PATH = path_shp_crop_honduras_municipalities if path_shp_crop_honduras_municipalities is not None else os.path.join(self.HONDURAS_SHP_PATH, "municipalities_shapefile/")
 
         self.FIN_DATE = datetime.strptime(central_date, "%Y-%m-%d").date()
-        self.INI_DATE = self.FIN_DATE - timedelta(days=9)
+        self.INI_DATE = self.FIN_DATE - timedelta(days=10)
 
-        print(self.INI_DATE)
-        print(self.FIN_DATE)
-        #Dates for last ten days, taking yesterday as last day
-        #fin_date = datetime.now().date() - timedelta(days=1)
-        #ini_date = fin_date - timedelta(days=9)
-
+        print("fecha de inicio: ", self.INI_DATE)
+        print("fecha de fin: ",self.FIN_DATE)
+    
 
     """
     MSXW data process
@@ -62,9 +59,10 @@ class Master:
         }
 
         google_drive_mswx = MSWXData(credentials_file)
-        # folders = google_drive_mswx.list_folders_in_folder(folder_id, var_mswx)
-        # for folder in folders:
-        #     google_drive_mswx.list_files_in_daily_folder(folder['id'], ini_date, fin_date, os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}"), folder['title'])
+        folders = google_drive_mswx.list_folders_in_folder(folder_id, var_mswx)
+
+        for folder in folders:
+            google_drive_mswx.list_files_in_daily_folder(folder['id'], ini_date, fin_date, os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}"), folder['title'])
 
         google_drive_mswx.calculate_et0(ini_date, fin_date, inputdatapath=os.path.join(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/"), outputpath=os.path.join(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/"), mask_file_path=f'{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4')
 
@@ -82,17 +80,20 @@ class Master:
     def post_data_process(self, ini_date, fin_date):
         tools = Tools()
         
-        #tools.translate_julian_dates()
+        tools.translate_julian_dates(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/")
 
-        print("Merging forecast files...")
+        print("Merging forecast and observed temperature files...")
+        #tools.merge_files(datetime(2024, 7, 5).date(), datetime(2024, 7, 14).date(), f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
+        #tools.merge_files(datetime(2024, 7, 5).date(), datetime(2024, 7, 14).date(), f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
+        #tools.merge_files(datetime(2024, 7, 5).date(), datetime(2024, 7, 14).date(), f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
-        tools.merge_files(datetime(2024, 4, 8).date(), datetime(2024, 4, 18).date(), f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
-        print("Merging forecast files end.")
+        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
+        print("Merging forecast and observed temperature files end.")
 
         print("Cropping observed Temp for Honduras...")
-        tools.country_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "./workspace/config/mask_honduras/mask_mswx_hnd.nc4", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc")
+        tools.country_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", f"{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc")
         print("Cropping observed Temp for Honduras end.")
 
         print("Cropping regions...")
@@ -133,30 +134,20 @@ class Master:
 if __name__ == "__main__":
     #YYYY-MM-DD
     central_date = sys.argv[1]
-    print(central_date)
-    print(sys.argv)
     workspace_path =  sys.argv[2] if len(sys.argv) > 2 else None
     path_shp_crop_honduras = sys.argv[3] if len(sys.argv) > 3 else None
     path_shp_crop_honduras_regions = sys.argv[4] if len(sys.argv) > 4 else None
     path_shp_crop_honduras_municipalities = sys.argv[5] if len(sys.argv) > 5 else None
     path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
 
-
-    #Dates for last ten days, taking yesterday as last day
-    #fin_date = datetime.now().date() - timedelta(days=1)
-    #ini_date = fin_date - timedelta(days=9)
-    #ini_date = datetime(2024, 4, 8).date()
-    #fin_date = datetime(2024, 4, 18).date() 
-    #ini_date = datetime(2024, 7, 5).date()
-    #fin_date = datetime(2024, 7, 14).date() 
     main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
 
     print("MSWX data process begin...")
-    #main.run_mswx_data_proccess(ini_date, fin_date)
+    main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
     print("MSWX data process end.")
 
     print("IMERG data process begin...")
-    #main.run_imerg_data_process(ini_date, fin_date)
+    main.run_imerg_data_process(main.INI_DATE, main.FIN_DATE)
     print("IMERG data process end.")
 
-    #main.post_data_process(ini_date, fin_date)
+    main.post_data_process(main.INI_DATE, main.FIN_DATE)
