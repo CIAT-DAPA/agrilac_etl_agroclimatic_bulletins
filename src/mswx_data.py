@@ -242,24 +242,5 @@ class MSWXData:
         # Guardar el Dataset a un archivo .nc
         output_file = os.path.join(outputpath, "ET0_Honduras.nc")
         ds.to_netcdf(output_file, mode='w', format='NETCDF4')
+        print("ETC save on: ", outputpath)
         
-# Ejemplo de uso:
-# if __name__ == "__main__":
-#     credentials_file = "./credentials.json"
-#     folder_id = "14no0Wkoat3guyvVnv-LccXOEoxQqDRy7"
-#     ini_date = datetime(2024, 4, 8).date()
-#     fin_date = datetime(2024, 4, 18).date()
-#     var_mswx = {
-#         "Tmax": "Tmax_variable_id",
-#         "Tmin": "Tmin_variable_id",
-#         "RelHum": "RelHum_variable_id",
-#         "Wind": "Wind_variable_id",
-#         "SWd": "SWd_variable_id"
-#     }
-
-#     google_drive_mswx = MSWXData(credentials_file)
-#     folders = google_drive_mswx.list_folders_in_folder(folder_id, var_mswx)
-#     for folder in folders:
-#         google_drive_mswx.list_files_in_daily_folder(folder['id'], ini_date, fin_date, "./downloaded_data/", folder['title'])
-
-#     google_drive_mswx.calculate_et0(ini_date, fin_date)

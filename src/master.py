@@ -46,6 +46,9 @@ class Master:
     MSXW data process
     """
     def run_mswx_data_proccess(self, ini_date, fin_date):
+        tools = Tools()
+        print("Creando archivo credentials.json a partir de las variables de entorno...")
+        tools.create_gcc_json(f"{self.CONFIG_FOLDER}credentials.json")
         credentials_file = os.path.join(f"{self.CONFIG_FOLDER}credentials.json")
         folder_id = "14no0Wkoat3guyvVnv-LccXOEoxQqDRy7"  
         
@@ -78,8 +81,8 @@ class Master:
     Post data process
     """
     def post_data_process(self, ini_date, fin_date):
+     
         tools = Tools()
-        
         tools.translate_julian_dates(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/")
 
         print("Merging forecast and observed temperature files...")
@@ -90,10 +93,12 @@ class Master:
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
         tools.merge_files(ini_date, fin_date, f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
+        print(f"Merged files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
         print("Merging forecast and observed temperature files end.")
 
         print("Cropping observed Temp for Honduras...")
         tools.country_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", f"{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc")
+        print(f"Cropped Temp save on: {self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/")
         print("Cropping observed Temp for Honduras end.")
 
         print("Cropping regions...")
@@ -103,6 +108,9 @@ class Master:
         tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras_regions.nc", "Nombre")
         tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras_regions.nc", "Nombre")
         tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras_regions.nc", "Nombre")
+        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/")
+        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/")
+        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
         print("Cropping regions end.")
 
         print("Plotting files...")
@@ -112,6 +120,7 @@ class Master:
         tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_forecast_")
         tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_forecast_")
         tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_forecast_")
+        print(f"Plot files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/figures/")
         print("Plotting files end.")
 
         print("Writting CSV file for daily mean for municipalities...")
@@ -128,8 +137,15 @@ class Master:
         merged_df = merged_df.merge(prep_imerg, on=["region", "municipio"])
         merged_df = merged_df.merge(prep_forecast, on=["region", "municipio"])
         merged_df.to_csv(f"{self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
+        print(f"CSV file for daily mean for municipalities save on: {self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv")
         print("Writting CSV file for daily mean for municipalities end.")
 
+    def creates_folders(self):
+           #Creates output forecast and figures folders
+        if not os.path.exists(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/"):
+            os.makedirs(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
+        if not os.path.exists(f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/"):
+            os.makedirs(f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/")
 
 if __name__ == "__main__":
     #YYYY-MM-DD
@@ -141,6 +157,7 @@ if __name__ == "__main__":
     path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
 
     main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
+    main.creates_folders()
 
     print("MSWX data process begin...")
     main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)

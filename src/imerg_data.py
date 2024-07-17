@@ -2,7 +2,7 @@ from urllib import request, error
 from netCDF4 import Dataset
 import pandas as pd
 from datetime import timedelta
-import os, json
+import os
 import xarray as xr
 from tqdm import tqdm
 
@@ -17,17 +17,9 @@ class IMERGData:
             current_date = current_date.replace(day=1)
         return result
 
-    def load_config(self, config_path):
-        with open(config_path, 'r') as config_file:
-            config = json.load(config_file)
-        return config
-
     def imerg(self, ini_date, fin_date, download_folder, output_folder, mask_file_path):
-        #Archivo de configuración con las credenciales de la cuenta de IMERG
-        config_path = '../workspace/config/conf.json'
-        config = self.load_config(config_path)
-        username = config.get("username")
-        password = config.get("password")
+        username = os.getenv('IMERG_USERNAME')
+        password = os.getenv('IMERG_PWD')
         redirectHandler = request.HTTPRedirectHandler()
         cookieProcessor = request.HTTPCookieProcessor()
         passwordManager = request.HTTPPasswordMgrWithDefaultRealm()
@@ -132,6 +124,7 @@ class IMERGData:
         # Aplicar la máscara a los datos globales
         ds_global_honduras = combined_ds.where(ds_mask['mask'] == 1, drop=True)
         ds_global_honduras.to_netcdf(f'{output_folder}/IMERG_Honduras.nc')
+        print("Precipitación usando IMERG para Honduras guardado en: ", output_folder)
 
         # Cerrar los datasets
         for ds in datasets:

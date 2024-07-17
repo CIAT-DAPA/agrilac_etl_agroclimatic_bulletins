@@ -1,4 +1,4 @@
-import os
+import os, json
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -286,3 +286,61 @@ class Tools():
         df = pd.DataFrame(results)
         #df.to_csv(output_csv, index=False)
         return df
+
+
+    def create_gcc_json(self, file_path):
+        """
+        Función para crear el archivo credentials.json usando las variables de entorno. Este archivo es necesario para el proceso
+        de MSWX.
+        Parámetros:
+        - file_path: Ruta donde se escribirá el archivo json.
+        """
+        gcc_variables = [
+            "GCC_TYPE",
+            "GCC_PROJECT_ID",
+            "GCC_PRIVATE_KEY_ID",
+            "GCC_PRIVATE_KEY",
+            "GCC_CLIENT_EMAIL",
+            "GCC_CLIENT_ID",
+            "GCC_AUTH_URI",
+            "GCC_TOKEN_URI",
+            "GCC_AUTH_PROVIDER_X509_CERT_URL",
+            "GCC_CLIENT_X509_CERT_URL",
+            "GCC_UNIVERSE_DOMAIN"
+        ]
+        
+        gcc_data = {}
+        
+        try:
+            for var in gcc_variables:
+                value = os.getenv(var)
+                if value is None:
+                    raise ValueError(f"La variable de entorno {var} no está definida.")
+                gcc_data[var.lower()] = value
+                
+            # Renaming keys to match the required JSON structure
+            gcc_data = {
+                "type": gcc_data["gcc_type"],
+                "project_id": gcc_data["gcc_project_id"],
+                "private_key_id": gcc_data["gcc_private_key_id"],
+                "private_key": gcc_data["gcc_private_key"],
+                "client_email": gcc_data["gcc_client_email"],
+                "client_id": gcc_data["gcc_client_id"],
+                "auth_uri": gcc_data["gcc_auth_uri"],
+                "token_uri": gcc_data["gcc_token_uri"],
+                "auth_provider_x509_cert_url": gcc_data["gcc_auth_provider_x509_cert_url"],
+                "client_x509_cert_url": gcc_data["gcc_client_x509_cert_url"],
+                "universe_domain": gcc_data["gcc_universe_domain"]
+            }
+            # Write JSON data to file with correct newline handling
+            json_str = json.dumps(gcc_data, indent=4, ensure_ascii=False)
+            json_str = json_str.replace('\\\\n', '\\n')  # Correct newline characters
+
+            with open(file_path, 'w') as json_file:
+                json_file.write(json_str)
+        
+            print(f"Archivo credentials.json creado con éxito: {file_path}")
+        
+        except ValueError as e:
+            print(e)
+            print("Debe declarar todas las variables de entorno.")
