@@ -20,7 +20,7 @@ This repository contains all related to ETL Agrilac CENAOS Infoagro.
 
 ## Project Structure
 
-- `workspace/`: It is the main directory where the input, output, and configuration files will be. (it is not necessary to create it, it is created automatically).
+- `workspace/`: It is the main directory where the input, output, and configuration files will be.
 - `workspace/config/mask_honduras/`: This folder contains a Honduras NetCDF file that will be used to cut out the shape of the country. You must provide such a file in the folder with the name "mask_mswx_hnd.nc4" for the process to work correctly.
 - `workspace/config/mask_honduras/municipalities_shapefile/`: This folder contains a municipalities shapefile for Honduras. You must provide such files in the folder with the name "Municipios_reg_prod_HN.shp" for the process to work correctly.
 - `workspace/config/mask_honduras/regions_shapefile/`: This folder contains a region shapefile for Honduras. You must provide such files in the folder with the name "Regiones_productoras_HN.shp" for the process to work correctly.
