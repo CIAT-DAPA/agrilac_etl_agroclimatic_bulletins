@@ -21,15 +21,19 @@ This repository contains all related to ETL Agrilac CENAOS Infoagro.
 ## Project Structure
 
 - `workspace/`: It is the main directory where the input, output, and configuration files will be. (it is not necessary to create it, it is created automatically).
-- `workspace/config/`: This folder contains the shapefile files used for the data process.
-- `workspace/outputs/`: Folder where all outputs will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/outputs/YYYYMMDD/MSWX/`: Folder where all MSWX outputs will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/outputs/YYYYMMDD/IMERG/`: Folder where all IMERG outputs will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/outputs/YYYYMMDD/forecast/`: Folder where all forecast outputs will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/outputs/YYYYMMDD/figures/`: Folder where all graphs will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/inputs/`: Folder where all inputs will be saved, (it is not necessary to create it, it is created automatically).
--`workspace/inputs/downloaded_data/`: Folder where all data downloaded will be saved, (it is not necessary to create it, it is created automatically).
-- `workspace/inputs/forecast_data/`: Folder where all forecast data for temperature, precipitation and ET0  will be saved, (it is not necessary to create it, it is created automatically).
+- `workspace/config/mask_honduras/`: This folder contains a Honduras NetCDF file that will be used to cut out the shape of the country. You must provide such a file in the folder with the name "mask_mswx_hnd.nc4" for the process to work correctly.
+- `workspace/config/mask_honduras/municipalities_shapefile/`: This folder contains a municipalities shapefile for Honduras. You must provide such files in the folder with the name "Municipios_reg_prod_HN.shp" for the process to work correctly.
+- `workspace/config/mask_honduras/regions_shapefile/`: This folder contains a region shapefile for Honduras. You must provide such files in the folder with the name "Regiones_productoras_HN.shp" for the process to work correctly.
+- `workspace/outputs/`: Folder where all outputs will be saved
+- `workspace/outputs/YYYYMMDD/MSWX/`: Folder where all MSWX outputs will be saved
+- `workspace/outputs/YYYYMMDD/IMERG/`: Folder where all IMERG outputs will be saved, 
+- `workspace/outputs/YYYYMMDD/forecast/`: Folder where all forecast outputs will be saved, 
+- `workspace/outputs/YYYYMMDD/figures/`: Folder where all graphs will be saved, 
+- `workspace/inputs/`: Folder where all inputs will be saved, 
+- `workspace/inputs/downloaded_data/`: Folder where all data downloaded will be saved, 
+- `workspace/inputs/forecast_data/ET0/`: This folder contains ET0 forecast .tif files for Honduras from the WRF. You must provide these files in "ET0_YYYY_MM_DD.tif" format and the dates must correspond to the start and end dates of the process.
+- `workspace/inputs/forecast_data/RAIN/`: This folder contains precipitation forecast .tif files for Honduras from the WRF. You must provide these files in "RAIN_YYYY_MM_DD.tif" format and the dates must correspond to the start and end dates of the process.
+- `workspace/inputs/forecast_data/T2/`: This folder contains temperature forecast .tif files for Honduras from the WRF. You must provide these files in "T2_YYYY_MM_DD.tif" format and the dates must correspond to the start and end dates of the process.
 - `src/`: Folder to store the source code of the project.
 
 ## Configure DEV Environment
@@ -55,22 +59,22 @@ For setting env vars in **Linux** you use:
 export SECRET_KEY=Loc@lS3cr3t
 
 ```
-GDC stands for Google Drive Credentials. The variables **GDC_** reference attributes in Google's credentials.json file.
+GCC stands for Google Cloud Credentials. The variables **GCC_** reference attributes in Google's credentials.json file.
 The variables environments required are the following:
 
 * IMERG_USERNAME: IMERG user
 * IMERG_PWD: IMERG password
-* GDC_TYPE: Google Drive Credentials type.
-* GDC_PROJECT_ID: Google Drive Credentials project id.
-* GDC_PRIVATE_KEY_ID: Google Drive Credentials private key id.
-* GDC_PRIVATE_KEY: Google Drive Credentials private key.
-* GDC_CLIENT_EMAIL: Google Drive Credentials client email.
-* GDC_CLIENT_id: Google Drive Credentials client id.
-* GDC_AUTH_URI: Google Drive Credentials auth uri.
-* GDC_TOKEN_URI: Google Drive Credentials token uri.
-* GDC_AUTH_PROVIDER_X509_CERT_URL: Google Drive Credentials auth provider x509 cert url.
-* GDC_CLIENT_X509_CERT_URL: Google Drive Credentials client x509 cert url.
-* GDC_UNIVERSE_DOMAIN: Google Drive Credentials universe domain
+* GCC_TYPE: Google Cloud Credentials type.
+* GCC_PROJECT_ID: Google Cloud Credentials project id.
+* GCC_PRIVATE_KEY_ID: Google Cloud Credentials private key id.
+* GCC_PRIVATE_KEY: Google Cloud Credentials private key.
+* GCC_CLIENT_EMAIL: Google Cloud Credentials client email.
+* GCC_CLIENT_id: Google Cloud Credentials client id.
+* GCC_AUTH_URI: Google Cloud Credentials auth uri.
+* GCC_TOKEN_URI: Google Cloud Credentials token uri.
+* GCC_AUTH_PROVIDER_X509_CERT_URL: Google Cloud Credentials auth provider x509 cert url.
+* GCC_CLIENT_X509_CERT_URL: Google Cloud Credentials client x509 cert url.
+* GCC_UNIVERSE_DOMAIN: Google Cloud Credentials universe domain
 
 
 ## Run
@@ -84,10 +88,10 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
 ### Params
 - end_date: date in YYYY-MM-DD format. This will be the last day of a 10-day range. This is the only **mandatory** parameter.
 - workspace_path: the path set as workspace 
-- path_shp_crop_honduras: path where is the mask for Honduras
-- path_shp_crop_honduras_regions: path where is the shapefile for Honduras regions
-- path_shp_crop_honduras_municipalities: path where is the shapefile for Honduras municipalities
-- path_forecast_files: path where the WRF .nc files (Temperature, Rain and ET0)
+- path_shp_crop_honduras: Corresponds to the path `workspace/config/mask_honduras/` indicated in the Project Structure section
+- path_shp_crop_honduras_regions: Corresponds to the path `workspace/config/mask_honduras/regions_shapefile/` indicated in the Project Structure section
+- path_shp_crop_honduras_municipalities: Corresponds to the path `workspace/config/mask_honduras/municipalities_shapefile/` indicated in the Project Structure section
+- path_forecast_files: Corresponds to the path `workspace/inputs/downloaded_data/` indicated in the Project Structure section
   
 ### Example
 ````bash
