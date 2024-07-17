@@ -55,11 +55,11 @@ For setting env vars in **Linux** you use:
 export SECRET_KEY=Loc@lS3cr3t
 
 ```
+GDC stands for Google Drive Credentials. The variables **GDC_** reference attributes in Google's credentials.json file.
 The variables environments required are the following:
 
 * IMERG_USERNAME: IMERG user
 * IMERG_PWD: IMERG password
-GDC stands for Google Drive Credentials. The following variables reference attributes in Google's credentials.json file.
 * GDC_TYPE: Google Drive Credentials type.
 * GDC_PROJECT_ID: Google Drive Credentials project id.
 * GDC_PRIVATE_KEY_ID: Google Drive Credentials private key id.
@@ -87,7 +87,9 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
 - path_shp_crop_honduras: path where is the mask for Honduras
 - path_shp_crop_honduras_regions: path where is the shapefile for Honduras regions
 - path_shp_crop_honduras_municipalities: path where is the shapefile for Honduras municipalities
-
-### Example
-python master.py 2024-06-30
 - path_forecast_files: path where the WRF .nc files (Temperature, Rain and ET0)
+  
+### Example
+````bash
+python master.py 2024-06-30
+````
