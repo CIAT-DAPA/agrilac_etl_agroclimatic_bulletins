@@ -17,6 +17,7 @@ This repository contains all related to ETL Agrilac CENAOS Infoagro.
 
 - Python 3.x
 - You need an account to download IMERG data. You can create one here https://urs.earthdata.nasa.gov/
+- Clone this repository.
 
 ## Project Structure
 
