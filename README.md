@@ -96,5 +96,5 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
   
 ### Example
 ````bash
-python master.py 2024-06-30
+python master.py 2024-05-30
 ````
