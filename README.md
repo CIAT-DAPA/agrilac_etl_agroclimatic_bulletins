@@ -86,7 +86,7 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
 ````
 
 ### Params
-- end_date: date in YYYY-MM-DD format. This will be the last day of a 10-day range. This is the only **mandatory** parameter.
+- end_date: date in YYYY-MM-DD format. The day before this date will be the final day of the ten-day range. This is the only **mandatory** parameter.
 - workspace_path: the path set as workspace 
 - path_shp_crop_honduras: Corresponds to the path `workspace/config/mask_honduras/` indicated in the Project Structure section
 - path_shp_crop_honduras_regions: Corresponds to the path `workspace/config/mask_honduras/regions_shapefile/` indicated in the Project Structure section
