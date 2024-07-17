@@ -2,6 +2,7 @@
 .venv/
 rclone/
 env2/
+env3/
 downloaded_data/
 outputs/
 credentials.json

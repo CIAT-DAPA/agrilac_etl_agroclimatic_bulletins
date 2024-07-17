@@ -124,12 +124,12 @@ class Master:
         print("Plotting files end.")
 
         print("Writting CSV file for daily mean for municipalities...")
-        temp = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
-        temp_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
-        et0_mswx = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
-        et0_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
-        prep_imerg = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
-        prep_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}/Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
+        temp = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
+        temp_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
+        et0_mswx = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
+        et0_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
+        prep_imerg = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
+        prep_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
 
         merged_df = temp.merge(temp_forecast, on=["region", "municipio"])
         merged_df = merged_df.merge(et0_mswx, on=["region", "municipio"])
