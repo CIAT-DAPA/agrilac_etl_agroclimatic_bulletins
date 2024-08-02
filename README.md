@@ -1,5 +1,5 @@
 # ETL Agroclimatic Bulletins
-This repository contains all related to ETL Agrilac CENAOS Infoagro.
+This repository contains all related to ETL Agroclimatic Bulletins
 
 ## Features
 
