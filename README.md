@@ -91,7 +91,7 @@ python master.py end_date workspace_path path_shp_crop_honduras path_shp_crop_ho
 - path_shp_crop_honduras: Corresponds to the path `workspace/config/mask_honduras/` indicated in the Project Structure section
 - path_shp_crop_honduras_regions: Corresponds to the path `workspace/config/mask_honduras/regions_shapefile/` indicated in the Project Structure section
 - path_shp_crop_honduras_municipalities: Corresponds to the path `workspace/config/mask_honduras/municipalities_shapefile/` indicated in the Project Structure section
-- path_forecast_files: Corresponds to the path `workspace/inputs/downloaded_data/` indicated in the Project Structure section
+- path_forecast_files: Corresponds to the path `workspace/input/forecast_data/` indicated in the Project Structure section
   
 ### Example
 ````bash
