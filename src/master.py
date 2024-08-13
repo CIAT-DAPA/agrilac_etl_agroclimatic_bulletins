@@ -171,23 +171,27 @@ class Master:
             os.makedirs(f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/")
 
 if __name__ == "__main__":
-    #YYYY-MM-DD
-    central_date = sys.argv[1]
-    workspace_path =  sys.argv[2] if len(sys.argv) > 2 else None
-    path_shp_crop_honduras = sys.argv[3] if len(sys.argv) > 3 else None
-    path_shp_crop_honduras_regions = sys.argv[4] if len(sys.argv) > 4 else None
-    path_shp_crop_honduras_municipalities = sys.argv[5] if len(sys.argv) > 5 else None
-    path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
+    variable = os.getenv('ETL_EXEC')
 
-    main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
-    main.creates_folders()
+    if variable is None or bool(int(variable)):
+        #YYYY-MM-DD
+        central_date = sys.argv[1]
+        workspace_path =  sys.argv[2] if len(sys.argv) > 2 else None
+        path_shp_crop_honduras = sys.argv[3] if len(sys.argv) > 3 else None
+        path_shp_crop_honduras_regions = sys.argv[4] if len(sys.argv) > 4 else None
+        path_shp_crop_honduras_municipalities = sys.argv[5] if len(sys.argv) > 5 else None
+        path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
 
-    print("IMERG data process begin...")
-    main.run_imerg_data_process(main.INI_DATE, main.FIN_DATE)
-    print("IMERG data process end.")
+        main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
+        main.creates_folders()
 
-    print("MSWX data process begin...")
-    main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
-    print("MSWX data process end.")
+        print("IMERG data process begin...")
+        main.run_imerg_data_process(main.INI_DATE, main.FIN_DATE)
+        print("IMERG data process end.")
 
-    main.post_data_process(main.INI_DATE, main.FIN_DATE)
+        print("MSWX data process begin...")
+        main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
+        print("MSWX data process end.")
+
+        main.post_data_process(main.INI_DATE, main.FIN_DATE)
+    
