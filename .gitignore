@@ -4,7 +4,7 @@ rclone/
 env2/
 env3/
 downloaded_data/
-outputs/
+output/
 credentials.json
 _pycache_
 __pycache__/
