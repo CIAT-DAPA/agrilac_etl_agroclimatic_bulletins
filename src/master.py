@@ -86,82 +86,87 @@ class Master:
     def post_data_process(self, ini_date, fin_date):
      
         tools = Tools()
-        tools.translate_julian_dates(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/")
-
-        print("Merging forecast and observed temperature files...")
-        #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
-        #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
-        #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
-        tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
-        tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
-        tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
-        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
-        print(f"Merged files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
-        print("Merging forecast and observed temperature files end.")
+        #tools.translate_julian_dates(f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/")
 
         print("Cropping observed Temp for Honduras...")
+        tools.merge_files(ini_date, fin_date, f"{self.INPUTS_DOWNLOADED_DATA}{self.TODAY}/MSWX/Temp/", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", "nc", "grados celcius", variable_name='air_temperature')
         tools.country_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp.nc", f"{self.HONDURAS_SHP_PATH}mask_mswx_hnd.nc4", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc")
         print(f"Cropped Temp save on: {self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/")
         print("Cropping observed Temp for Honduras end.")
 
-        print("Cropping regions...")
-        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras_regions.nc", "Nombre")
-        try:
-            tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras_regions.nc", "Nombre")
-           
-        except:
-            print("Error al recortar región para precipitación observada. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
-        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras_regions.nc", "Nombre")
-        tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras_regions.nc", "Nombre")
-        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/")
-        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/")
-        print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
-        print("Cropping regions end.")
+        ##Aquí se itera sobre cada dominio
+        for carpeta in os.listdir(self.INPUTS_FORECAST_DATA):
+            ruta_dominio_actual= os.path.join(self.INPUTS_FORECAST_DATA, carpeta)
+            if os.path.isdir(ruta_dominio_actual):  # Verifica que sea una carpeta
+                print("Merging forecast files...")
+                #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
+                #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
+                #tools.merge_files(datetime(2024, 8, 8).date(), datetime(2024, 8, 17).date(), f"{self.INPUTS_FORECAST_DATA}T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
+                tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{ruta_dominio_actual}/RAIN/RAIN_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_RAIN_forecast_Honduras.nc", "tif", "mm/day",variable_name='precipitation')
+                tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{ruta_dominio_actual}/ET0/ET0_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_ET0_forecast_Honduras.nc", "tif", "mm/day", variable_name='ET0')
+                tools.merge_files(fin_date, fin_date + timedelta(days=9), f"{ruta_dominio_actual}/T2/T2_", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_Temperature_forecast_Honduras.nc", "tif", "grados celcius", variable_name='air_temperature')
 
-        print("Plotting files...")
-        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_observado_")
-        try:
-            tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_observado_")
-           
-        except:
-            print("Error al crear el gráfico para precipitación observada. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
-        
-        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_observado_")
-        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/Temperature_forecast_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_forecast_")
-        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_forecast_")
-        tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_forecast_")
-        print(f"Plot files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/figures/")
-        print("Plotting files end.")
+                print(f"Merged files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
+                print("Merging forecast files end.")
 
-        print("Writting CSV file for daily mean for municipalities...")
-        temp = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
-        temp_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
-        et0_mswx = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
-        et0_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
-        try:
-            prep_imerg = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
-           
-        except:
-            print("Error al agregar la precipitación observada al CSV. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
-        
-        
-        prep_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
+                print("Cropping regions...")
+                tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras_regions.nc", "Nombre")
+                try:
+                    tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras_regions.nc", "Nombre")
+                
+                except:
+                    print("Error al recortar región para precipitación observada. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
+                tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_ET0_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_ET0_forecast_Honduras_regions.nc", "Nombre")
+                tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_RAIN_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_RAIN_forecast_Honduras_regions.nc", "Nombre")
+                tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras_regions.nc", "Nombre")
+                tools.regions_crop(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_Temperature_forecast_Honduras.nc", f"{self.HONDURAS_REGIONS_PATH}Regiones_productoras_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_Temperature_forecast_Honduras_regions.nc", "Nombre")
+                print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/")
+                print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/")
+                print(f"Cropped regions save on: {self.OUTPUTS_FOLDER}{self.TODAY}/forecast/")
+                print("Cropping regions end.")
 
-        merged_df = temp.merge(temp_forecast, on=["region", "municipio"])
-        merged_df = merged_df.merge(et0_mswx, on=["region", "municipio"])
-        merged_df = merged_df.merge(et0_forecast, on=["region", "municipio"]) 
-        try:
-            merged_df = merged_df.merge(prep_imerg, on=["region", "municipio"])
-           
-        except:
-            print("Error al agregar la precipitación observada al CSV. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
-        
-        merged_df = merged_df.merge(prep_forecast, on=["region", "municipio"])
-        merged_df.to_csv(f"{self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
-        print(f"CSV file for daily mean for municipalities save on: {self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv")
-        print("Writting CSV file for daily mean for municipalities end.")
+                print("Plotting files...")
+                tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/temperature_honduras_observado_")
+                try:
+                    tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/precipitation_honduras_observado_")
+                
+                except:
+                    print("Error al crear el gráfico para precipitación observada. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
+                
+                tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/et0_honduras_observado_")
+                tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_Temperature_forecast_Honduras.nc", "air_temperature", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/{carpeta}_temperature_honduras_forecast_")
+                tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_ET0_forecast_Honduras.nc", "ET0", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/{carpeta}_et0_honduras_forecast_")
+                tools.plot_nc_file(f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_RAIN_forecast_Honduras.nc", "precipitation", save_path=f"{self.OUTPUTS_FOLDER}{self.TODAY}/figures/{carpeta}_precipitation_honduras_forecast_")
+                print(f"Plot files save on: {self.OUTPUTS_FOLDER}{self.TODAY}/figures/")
+                print("Plotting files end.")
+
+                print("Writting CSV file for daily mean for municipalities...")
+                temp = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/Temp_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c", "air-temperature_obs")
+                temp_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_Temperature_forecast_Honduras.nc", "air_temperature", "NAME_1", "NAME_2", "c","air-temperature_for")
+                et0_mswx = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/MSWX/ET0_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day", "et0_obs")
+                et0_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_ET0_forecast_Honduras.nc", "ET0", "NAME_1", "NAME_2", "mm-day","et0_for")
+                try:
+                    prep_imerg = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/IMERG/IMERG_Honduras.nc", "precipitationCal", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_obs")
+                
+                except:
+                    print("Error al agregar la precipitación observada al CSV. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
+                
+                
+                prep_forecast = tools.calculate_daily_mean_per_municipality(f"{self.HONDURAS_MUNICIPALITIES_PATH}Municipios_reg_prod_HN.shp", f"{self.OUTPUTS_FOLDER}{self.TODAY}/forecast/{carpeta}_RAIN_forecast_Honduras.nc", "precipitation", "NAME_1", "NAME_2", "mm-day", "precipitation-cal_for")
+
+                merged_df = temp.merge(temp_forecast, on=["region", "municipio"])
+                merged_df = merged_df.merge(et0_mswx, on=["region", "municipio"])
+                merged_df = merged_df.merge(et0_forecast, on=["region", "municipio"]) 
+                try:
+                    merged_df = merged_df.merge(prep_imerg, on=["region", "municipio"])
+                
+                except:
+                    print("Error al agregar la precipitación observada al CSV. Revisar si la descarga de IMERG fue correcta y se creó el archivo IMERG_Honduras.nc")
+                
+                merged_df = merged_df.merge(prep_forecast, on=["region", "municipio"])
+                merged_df.to_csv(f"{self.OUTPUTS_FOLDER}{self.TODAY}/{carpeta}_daily_mean_municipalities.csv", index=False, encoding='utf-8-sig')
+                print(f"CSV file for daily mean for municipalities save on: {self.OUTPUTS_FOLDER}{self.TODAY}/daily_mean_municipalities.csv")
+                print("Writting CSV file for daily mean for municipalities end.")
 
     def creates_folders(self):
            #Creates output forecast and figures folders
@@ -186,11 +191,11 @@ if __name__ == "__main__":
         main.creates_folders()
 
         print("IMERG data process begin...")
-        main.run_imerg_data_process(main.INI_DATE, main.FIN_DATE)
+        #main.run_imerg_data_process(main.INI_DATE, main.FIN_DATE)
         print("IMERG data process end.")
 
         print("MSWX data process begin...")
-        main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
+        #main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
         print("MSWX data process end.")
 
         main.post_data_process(main.INI_DATE, main.FIN_DATE)
