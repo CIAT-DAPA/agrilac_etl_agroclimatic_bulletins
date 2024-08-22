@@ -55,7 +55,7 @@ class IMERGData:
             with tqdm(total=total_iterations, desc="Descargando datos de precipitación de IMERG", bar_format=bar_format) as pbar:
                 for day in days:
                     try:
-                        url = f'https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGDL.06/{year}/{month}/3B-DAY-L.MS.MRG.3IMERG.{year}{month}{day}-S000000-E235959.V06.nc4.nc4?precipitationCal[0:1:0][0:1:3599][0:1:1799]'            
+                        url = f'https://gpm1.gesdisc.eosdis.nasa.gov/opendap/hyrax/GPM_L3/GPM_3IMERGDL.07/{year}/{month}/3B-DAY-L.MS.MRG.3IMERG.{year}{month}{day}-S000000-E235959.V07B.nc4.nc4?precipitation[0:1:0][0:1:3599][0:1:1799]'            
                         filename = f'{download_folder}IMERG_LATE{year}{month}{day}.nc'
                         request.urlretrieve(url, filename)
                         pbar.update(1)
@@ -68,8 +68,8 @@ class IMERGData:
                             os.remove(filename)
                             continue
 
-                        if 'precipitationCal' not in imerg_nc.variables:
-                            print(f'precipitationCal not found in {filename}')
+                        if 'precipitation' not in imerg_nc.variables:
+                            print(f'precipitation not found in {filename}')
                             imerg_nc.close()
                             os.remove(filename)
                             continue
@@ -115,7 +115,7 @@ class IMERGData:
         combined_ds['time'] = times  # Asignar la coordenada de tiempo
 
         # Asignar las unidades a la variable
-        combined_ds['precipitationCal'].attrs['units'] = 'mm/day'
+        combined_ds['precipitation'].attrs['units'] = 'mm/day'
         combined_ds.attrs['units'] = 'mm/day'
 
         mask_file = mask_file_path

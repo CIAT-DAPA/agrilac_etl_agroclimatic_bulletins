@@ -12,17 +12,18 @@ import matplotlib.dates as mdates
 
 class Tools():
 
-    def plot_nc_file(self, file_path, variable_name, save_path, lon_dim='lon', lat_dim='lat', time_dim='time'):
+    def plot_nc_file(self, file_path, variable_name, save_path, lon_dim='lon', lat_dim='lat', time_dim='time', region_dim='region'):
         """
-        Función para graficar el promedio diario y la desviación estándar de una variable en un archivo NetCDF y guardar la figura.
+        Función para graficar el promedio diario y la desviación estándar de una variable en un archivo NetCDF y guardar la figura por región.
 
         Parámetros:
         - file_path: Ruta al archivo NetCDF.
         - variable_name: Nombre de la variable a graficar.
-        - save_path: Ruta donde se guardará la figura.
+        - save_path: Ruta donde se guardarán las figuras.
         - lon_dim: Nombre de la dimensión de longitud (por defecto 'lon').
         - lat_dim: Nombre de la dimensión de latitud (por defecto 'lat').
         - time_dim: Nombre de la dimensión de tiempo (por defecto 'time').
+        - region_dim: Nombre de la dimensión de región (por defecto 'region').
         """
         # Abrir el archivo NetCDF
         dataset = xr.open_dataset(file_path)
@@ -31,44 +32,67 @@ class Tools():
         if variable_name not in dataset:
             raise ValueError(f"La variable '{variable_name}' no se encuentra en el archivo.")
 
-        # Calcular el promedio diario y la desviación estándar
-        daily_mean = dataset[variable_name].mean(dim=[lon_dim, lat_dim])
-        daily_std = dataset[variable_name].std(dim=[lon_dim, lat_dim])
+        # Iterar sobre cada región
+        for region in dataset[region_dim].values:
+            # Filtrar los datos por la región actual
+            region_data = dataset.sel({region_dim: region})
 
-        # Extraer los datos de tiempo
-        time = dataset[time_dim].values
+            # Calcular el promedio diario y la desviación estándar para la región actual
+            daily_mean = region_data[variable_name].mean(dim=[lon_dim, lat_dim])
+            daily_std = region_data[variable_name].std(dim=[lon_dim, lat_dim])
 
-        # Convertir el tiempo de cftime.DatetimeGregorian a pandas datetime
-        if isinstance(time[0], cftime.DatetimeGregorian):
-            time = np.array([np.datetime64(date.strftime('%Y-%m-%d')) for date in time])
+            # Extraer los datos de tiempo
+            time = dataset[time_dim].values
 
-        # Calcular los rangos de incertidumbre
-        upper_bound = daily_mean + daily_std
-        lower_bound = daily_mean - daily_std
+            # Convertir el tiempo de cftime.DatetimeGregorian a pandas datetime si es necesario
+            if isinstance(time[0], cftime.DatetimeGregorian):
+                time = np.array([np.datetime64(date.strftime('%Y-%m-%d')) for date in time])
 
-        # Obtener las unidades de la variable
-        units = dataset[variable_name].attrs.get('units', 'unidades')
+            # Obtener las unidades de la variable
+            units = dataset[variable_name].attrs.get('units', 'unidades')
 
-        # Graficar
-        plt.figure(figsize=(10, 6))
-        plt.plot(time, daily_mean, label=f'{variable_name} promedio', color='green')
-        plt.fill_between(time, lower_bound, upper_bound, color='green', alpha=0.3, label='Rango de incertidumbre')
-        plt.xlabel('Días')
-        plt.ylabel(f'{variable_name} ({units})')
-        plt.title(f'Promedio diario de {variable_name} con rango de incertidumbre')
+            # Nombres en español
+            dict = {
+                "air_temperature": "temperatura del aire",
+                "precipitation": "precipitación",
+                "mm/day": "mm/día",
+            }
+            nombre_variable_final = dict[variable_name] if variable_name in dict else variable_name
+            nombre_unidades_final = dict[units] if units in dict else units
 
-        # Ajustar las etiquetas de fechas
-        plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=1))
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        plt.gcf().autofmt_xdate()  # Rotar las etiquetas de fecha para mayor claridad
+            # Si la variable es 'precipitation', se grafica un gráfico de barras
+            if variable_name == "precipitation":
+                # Graficar para la región actual
+                plt.figure(figsize=(10, 6))
+                plt.bar(time, daily_mean, yerr=daily_std, capsize=5, color='skyblue', label=f'{nombre_variable_final} promedio')
+                plt.xlabel('Días')
+                plt.ylabel(f'{nombre_variable_final} ({nombre_unidades_final})')
+                plt.title(f'Promedio diario de {nombre_variable_final} con desviación estándar en la región {region}')
+            else:
+                # Graficar para la región actual con rango de incertidumbre
+                upper_bound = daily_mean + daily_std
+                lower_bound = np.where((daily_mean - daily_std < 0) & (variable_name == 'precipitation'), 0, daily_mean - daily_std)
+                
+                plt.figure(figsize=(10, 6))
+                plt.plot(time, daily_mean, label=f'{nombre_variable_final} promedio', color='green')
+                plt.fill_between(time, lower_bound, upper_bound, color='green', alpha=0.3, label='Rango de incertidumbre')
+                plt.xlabel('Días')
+                plt.ylabel(f'{nombre_variable_final} ({nombre_unidades_final})')
+                plt.title(f'Promedio diario de {nombre_variable_final} con rango de incertidumbre en la región {region}')
 
-        plt.legend()
-        plt.grid(True)
+            # Ajustar las etiquetas de fechas
+            plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=1))
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            plt.gcf().autofmt_xdate()  # Rotar las etiquetas de fecha para mayor claridad
 
-        # Guardar la figura
-        plt.savefig(f"{save_path}{variable_name}.png")
-        plt.close()
-    
+            plt.legend()
+            plt.grid(True)
+
+            # Guardar la figura
+            plt.savefig(f"{save_path}{variable_name}_{region}.png")
+            plt.close()
+
+
     def country_crop(self, file_to_be_cropped, mask_file, output_file):
         
         file_to_be_cropped = xr.open_dataset(file_to_be_cropped)
@@ -90,10 +114,10 @@ class Tools():
         if 'crs' not in ds.attrs:
             ds.rio.write_crs("EPSG:4326", inplace=True)  # Ajusta el EPSG según sea necesario
 
-         # Obtener las dimensiones del archivo NetCDF
+        # Obtener las dimensiones del archivo NetCDF
         lon_dim = 'lon' if 'lon' in ds.dims else 'x'
         lat_dim = 'lat' if 'lat' in ds.dims else 'y'
-
+        time_dim = 'time' if 'time' in ds.dims else None
 
         # Configura las dimensiones espaciales
         ds = ds.rio.set_spatial_dims(x_dim=lon_dim, y_dim=lat_dim, inplace=True)
@@ -113,19 +137,25 @@ class Tools():
         # Crear una lista para almacenar los nombres de las regiones
         region_names = []
 
+        # Obtener las unidades de la variable original
+        units = ds[data_var].attrs.get('units', 'unidades no definidas')
+
         # Iterar sobre cada región y recortar el dataset
         for idx, region in regions.iterrows():
             geometry = [mapping(region.geometry)]
-            
+
             # Crear la máscara de la región
             mask = ds.rio.clip(geometry, drop=False)
-            
+
             # Asegurarse de que la máscara tenga las mismas dimensiones que el dataset original
             mask = mask[data_var].notnull().astype(int)
 
             # Crear una variable para la región con un nombre único basado en el nombre de la columna
             region_name = region[name_column]
             region_masked = xr.where(mask, ds[data_var], float('nan'))
+
+            # Añadir el atributo de unidades al dataset recortado
+            region_masked.attrs['units'] = units
 
             # Añadir el dataset recortado a la lista
             clipped_datasets.append(region_masked)
@@ -134,6 +164,14 @@ class Tools():
         # Combinar todos los datasets recortados en uno solo
         combined_ds = xr.concat(clipped_datasets, dim='region')
         combined_ds = combined_ds.assign_coords(region=region_names)
+
+        # Asignar las coordenadas de tiempo si existen en el dataset original
+        if time_dim:
+            combined_ds = combined_ds.assign_coords({time_dim: ds[time_dim].values})
+            combined_ds[time_dim].attrs.update(ds[time_dim].attrs)  # Preservar los atributos de tiempo
+
+        # Mantener los atributos del archivo original
+        combined_ds.attrs.update(ds.attrs)
 
         # Guardar el resultado en un nuevo archivo netCDF
         combined_ds.to_netcdf(output_file)
