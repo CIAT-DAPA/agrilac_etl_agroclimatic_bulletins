@@ -206,5 +206,5 @@ if __name__ == "__main__":
         main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
         print("MSWX data process end.")
 
-        # main.post_data_process(main.INI_DATE, main.FIN_DATE)
+        main.post_data_process(main.INI_DATE, main.FIN_DATE)
     
