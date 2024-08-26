@@ -182,13 +182,18 @@ if __name__ == "__main__":
     variable = os.getenv('ETL_EXEC')
 
     if variable is None or bool(int(variable)):
+      
+        def process_arg(arg):
+            return None if arg == 'None' or arg is None else arg
+
+        # Procesar los argumentos
         #YYYY-MM-DD
-        central_date = sys.argv[1]
-        workspace_path =  sys.argv[2] if len(sys.argv) > 2 else None
-        path_shp_crop_honduras = sys.argv[3] if len(sys.argv) > 3 else None
-        path_shp_crop_honduras_regions = sys.argv[4] if len(sys.argv) > 4 else None
-        path_shp_crop_honduras_municipalities = sys.argv[5] if len(sys.argv) > 5 else None
-        path_forecast_files = sys.argv[6] if len(sys.argv) > 6 else None
+        central_date = sys.argv[1] if len(sys.argv) > 1 else None
+        workspace_path = process_arg(sys.argv[2]) if len(sys.argv) > 2 else None
+        path_shp_crop_honduras = process_arg(sys.argv[3]) if len(sys.argv) > 3 else None
+        path_shp_crop_honduras_regions = process_arg(sys.argv[4]) if len(sys.argv) > 4 else None
+        path_shp_crop_honduras_municipalities = process_arg(sys.argv[5]) if len(sys.argv) > 5 else None
+        path_forecast_files = process_arg(sys.argv[6]) if len(sys.argv) > 6 else None
 
         main = Master(central_date, workspace_path, path_shp_crop_honduras, path_shp_crop_honduras_regions, path_shp_crop_honduras_municipalities, path_forecast_files)
         main.creates_folders()
@@ -201,5 +206,5 @@ if __name__ == "__main__":
         main.run_mswx_data_proccess(main.INI_DATE, main.FIN_DATE)
         print("MSWX data process end.")
 
-        main.post_data_process(main.INI_DATE, main.FIN_DATE)
+        # main.post_data_process(main.INI_DATE, main.FIN_DATE)
     
