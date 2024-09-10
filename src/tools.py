@@ -272,14 +272,22 @@ class Tools():
             # Extraer los datos de la variable para el polígono del municipio
             variable_data = dataset[variable_name].sel({lon_dim: municipality_polygon.centroid.x, lat_dim: municipality_polygon.centroid.y}, method='nearest')
 
-            # Calcular el promedio diario
-            daily_mean = variable_data.mean(dim='time').values
+            string_to_append = "avg"
+
+           # Verificar si la variable es 'precipitation'
+            if variable_name == "precipitation" or variable_name == "precipitationCal":
+                # Calcular el acumulado diario
+                daily_value = variable_data.sum(dim='time').values
+                string_to_append = "acc"
+            else:
+                # Calcular el promedio diario
+                daily_value = variable_data.mean(dim='time').values
 
             # Agregar los resultados a la lista
             results.append({
                 'region': municipality[region_column],
                 'municipio': municipality[municipality_column],
-                f'{column_name}_{units}_avg': daily_mean
+                f'{column_name}_{units}_{string_to_append}': daily_value
             })
 
         # Crear un DataFrame con los resultados y escribirlo en un archivo CSV
