@@ -82,8 +82,12 @@ class IMERGData:
                     except Exception as e:
                         print(e)
 
-        # Merging, cropping, and writing file
-        self.merge_nc_files(ini_date, fin_date, download_folder, output_folder, mask_file_path)
+        try:
+            # Merging, cropping, and writing file
+            self.merge_nc_files(ini_date, fin_date, download_folder, output_folder, mask_file_path)
+        except Exception as e:
+                        print("Error al tratar de unir archivos .nc de precipitación. Verificar si la descarga fue correcta (disponibilidad de fechas en IMERG)")
+                        print(e)
 
     def merge_nc_files(self, start_date, end_date, download_folder, output_folder, mask_file_path):
         # Generar la lista de fechas

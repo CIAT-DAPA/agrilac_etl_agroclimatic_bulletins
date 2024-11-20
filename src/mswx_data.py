@@ -134,27 +134,33 @@ class MSWXData:
         bar_format = '{l_bar}{bar}| {n:.0f}/{total:.0f} [{elapsed}<{remaining}, {rate_fmt}]'
         with tqdm(total=total_iterations, desc=f"Calculando ET0", bar_format=bar_format) as pbar:
             for t in dates_list:
-                tmax_file = nc.Dataset(inputdatapath + "Tmax/" + str(int(t)) + ".nc")
-                tmax = tmax_file.variables["air_temperature"][:]
-                tmax = tmax[0, :, :]
+                try:
+                    tmax_file = nc.Dataset(inputdatapath + "Tmax/" + str(int(t)) + ".nc")
+                    tmax = tmax_file.variables["air_temperature"][:]
+                    tmax = tmax[0, :, :]
 
-                tmin_file = nc.Dataset(inputdatapath + "Tmin/" + str(int(t)) + ".nc")
-                tmin = tmin_file.variables["air_temperature"][:]
-                tmin = tmin[0, :, :]
+                    tmin_file = nc.Dataset(inputdatapath + "Tmin/" + str(int(t)) + ".nc")
+                    tmin = tmin_file.variables["air_temperature"][:]
+                    tmin = tmin[0, :, :]
 
-                temperature = (tmax + tmin) / 2
+                    temperature = (tmax + tmin) / 2
 
-                rh_file = nc.Dataset(inputdatapath + "RelHum/" + str(int(t)) + ".nc")
-                humidity = rh_file.variables["relative_humidity"][:]
-                humidity = humidity[0, :, :]
+                    rh_file = nc.Dataset(inputdatapath + "RelHum/" + str(int(t)) + ".nc")
+                    humidity = rh_file.variables["relative_humidity"][:]
+                    humidity = humidity[0, :, :]
 
-                wind_file = nc.Dataset(inputdatapath + "Wind/" + str(int(t)) + ".nc")
-                wind_speed = wind_file.variables["wind_speed"][:]
-                wind_speed = wind_speed[0, :, :]
+                    wind_file = nc.Dataset(inputdatapath + "Wind/" + str(int(t)) + ".nc")
+                    wind_speed = wind_file.variables["wind_speed"][:]
+                    wind_speed = wind_speed[0, :, :]
 
-                swd_file = nc.Dataset(inputdatapath + "SWd/" + str(int(t)) + ".nc")
-                solar_radiation = swd_file.variables["downward_shortwave_radiation"][:]
-                solar_radiation = solar_radiation[0, :, :]
+                    swd_file = nc.Dataset(inputdatapath + "SWd/" + str(int(t)) + ".nc")
+                    solar_radiation = swd_file.variables["downward_shortwave_radiation"][:]
+                    solar_radiation = solar_radiation[0, :, :]
+                except FileNotFoundError as e:
+                    print(f"Error: No se encontró el archivo {e.filename}. No se podrá calcular para {t}")
+                    print(f"Consulte https://www.gloh2o.org/mswx/ para validar los datos")
+                    continue
+
 
                 rows = np.size(lat)
                 cols = np.size(lon)
@@ -212,12 +218,15 @@ class MSWXData:
         # Convertir la lista de ET0 a un array numpy con una dimensión de tiempo
         ET0_array = np.array(ET0_list)
 
+        # Ajustar date_range para que coincida con los datos disponibles
+        valid_date_range = date_range[:len(ET0_array)]
+
         # Crear un DataArray de xarray
         ET0_da = xr.DataArray(
             ET0_array,
             dims=['time', 'lat', 'lon'],
             coords={
-                'time': date_range,
+                'time': valid_date_range,
                 'lat': lat[lat_indices],
                 'lon': lon[lon_indices]
             },
@@ -244,3 +253,4 @@ class MSWXData:
         ds.to_netcdf(output_file, mode='w', format='NETCDF4')
         print("ETC save on: ", outputpath)
         
+
